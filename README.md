@@ -22,7 +22,7 @@ In this case, the `load_module` directive should be used in nginx.conf to load t
 * **default**: `none`
 * **context**: `location`
 
-Enables Kafka logging on the specified location. `body` and `message_id` can contain nginx variables.
+Enables Kafka logging on the specified location. `topic`, `body` and `message_id` can contain nginx variables.
 
 ### kafka_log_kafka_client_id
 * **syntax**: `kafka_log_kafka_client_id client_id`
