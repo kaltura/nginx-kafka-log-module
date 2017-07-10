@@ -35,7 +35,7 @@
 
 // typedefs
 typedef struct {
-    rd_kafka_topic_t           *rkt;              /* kafka topic */
+    ngx_http_complex_value_t    topic;
     ngx_http_complex_value_t   *http_msg_id_var;  /* variable for message id */
 } ngx_kafka_log_kafka_conf_t;
 
@@ -50,6 +50,8 @@ typedef struct {
     ngx_uint_t       buffer_max_messages;  /* max. num. mesg. at send buffer */
     ngx_msec_t       backoff_ms;           /* ms to wait for ... */
     ngx_int_t        partition;            /* kafka partition */
+    ngx_rbtree_t     topics_rbtree;
+    ngx_rbtree_node_t topics_sentinel;
 } ngx_kafka_log_main_kafka_conf_t;
 
 // functions

@@ -48,7 +48,6 @@ typedef enum {
 } ngx_kafka_log_sink_e;
 
 typedef struct {
-    ngx_str_t                                 location;
     ngx_kafka_log_sink_e                       type;
     ngx_http_complex_value_t                  cv;
     ngx_open_file_t                           *file;
