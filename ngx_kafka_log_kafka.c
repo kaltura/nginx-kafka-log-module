@@ -255,6 +255,7 @@ ngx_kafka_log_init_kafka(
     kafka->rk                  = NULL;
     kafka->rkc                 = NULL;
 
+    kafka->debug.data          = NULL;
     kafka->brokers.data        = NULL;
     kafka->client_id.data      = NULL;
     kafka->compression.data    = NULL;
@@ -279,10 +280,7 @@ ngx_kafka_log_configure_kafka(ngx_pool_t *pool,
     static const char *conf_buffer_max_msgs_key    = "queue.buffering.max.messages";
     static const char *conf_retry_backoff_ms_key   = "retry.backoff.ms";
     static const char *conf_bootstrap_servers_key  = "bootstrap.servers";
-#if (NGX_DEBUG)
     static const char *conf_debug_key              = "debug";
-    static ngx_str_t   conf_all_value              = ngx_string("all");
-#endif
 
     /* - default values - */
     static ngx_str_t  kafka_compression_default_value = ngx_string("snappy");
@@ -352,11 +350,12 @@ ngx_kafka_log_configure_kafka(ngx_pool_t *pool,
         conf_log_level_key,
         conf->log_level);
 
-#if (NGX_DEBUG)
-    ngx_kafka_log_kafka_conf_set_str(pool,conf->rkc,
+    if (conf->debug.data != NULL)
+    {
+        ngx_kafka_log_kafka_conf_set_str(pool, conf->rkc,
             conf_debug_key,
-            &conf_all_value);
-#endif
+            &conf->debug);
+    }
 
     ngx_kafka_log_kafka_conf_set_str(pool, conf->rkc,
             conf_bootstrap_servers_key,

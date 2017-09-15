@@ -42,6 +42,7 @@ typedef struct {
 typedef struct {
     rd_kafka_t       *rk;                  /* kafka connection handler */
     rd_kafka_conf_t  *rkc;                 /* kafka configuration */
+    ngx_str_t        debug;                /* kafka list of debug contexts */
     ngx_str_t        brokers;              /* kafka list of brokers */
     ngx_str_t        client_id;            /* kafka client id */
     ngx_str_t        compression;          /* kafka communication compression */

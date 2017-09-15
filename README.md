@@ -31,6 +31,13 @@ Enables Kafka logging on the specified location. `topic`, `body` and `message_id
 
 Sets the Kafka client id.
 
+### kafka_log_kafka_debug
+* **syntax**: `kafka_log_kafka_debug context_list`
+* **default**: `nginx`
+* **context**: `main`
+
+Sets the list of debug contexts, use comma to separate multiple values.
+
 ### kafka_log_kafka_brokers
 * **syntax**: `kafka_log_kafka_brokers broker_list`
 * **default**: `nginx`
