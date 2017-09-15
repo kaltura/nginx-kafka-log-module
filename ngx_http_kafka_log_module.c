@@ -72,8 +72,16 @@ static ngx_command_t ngx_http_kafka_log_commands[] = {
         NULL
     },
     {
+        ngx_string("kafka_log_kafka_debug"),
+        NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
+        ngx_conf_set_str_slot,
+        NGX_HTTP_MAIN_CONF_OFFSET,
+        offsetof(ngx_http_kafka_log_main_conf_t, kafka.debug),
+        NULL
+    },
+    {
         ngx_string("kafka_log_kafka_brokers"),
-        NGX_HTTP_MAIN_CONF|NGX_CONF_1MORE,
+        NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
         ngx_conf_set_str_slot,
         NGX_HTTP_MAIN_CONF_OFFSET,
         offsetof(ngx_http_kafka_log_main_conf_t, kafka.brokers),
