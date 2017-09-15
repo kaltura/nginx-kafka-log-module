@@ -333,7 +333,7 @@ ngx_http_kafka_log_log_handler(ngx_http_request_t *r) {
                             msg_id.len,
                             NULL)) == -1) {
 
-                const char *errstr = rd_kafka_err2str(rd_kafka_errno2err(err));
+                const char *errstr = rd_kafka_err2str(rd_kafka_last_error());
 
                 ngx_log_error(NGX_LOG_ERR, r->pool->log, 0,
                         "failed to produce to topic %s "
