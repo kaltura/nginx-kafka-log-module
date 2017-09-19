@@ -27,7 +27,11 @@
 
 #if (NGX_HAVE_LIBRDKAFKA)
 
+#include "ngx_kafka_log_output.h"
+
 #define NGX_KAFKA_LOG_KAFKA_ERROR_MSG_LEN (2048)
+
+static ngx_rate_limit_ctx_t error_rate_limit = ngx_rate_limit(1, 4);
 
 static char *
 ngx_kafka_log_str_dup(ngx_pool_t *pool, ngx_str_t *src)
@@ -233,7 +237,8 @@ ngx_kafka_log_kafka_topic_new(
 static void
 ngx_kafka_log_kafka_dr_msg_cb(rd_kafka_t *rk, const rd_kafka_message_t *rkmessage, void *opaque)
 {
-    if (rkmessage->err)
+    if (rkmessage->err &&
+        ngx_kafka_log_rate_limit(&error_rate_limit))
     {
         ngx_log_error(NGX_LOG_ERR, ngx_cycle->log, 0,
             "kafka message delivery failed: %s", rd_kafka_err2str(rkmessage->err));
