@@ -23,3 +23,22 @@ ngx_kafka_log_write_sink_file(
     }
     return NGX_OK;
 }
+
+ngx_flag_t
+ngx_kafka_log_rate_limit(ngx_rate_limit_ctx_t* ctx)
+{
+    time_t now = ngx_time();
+
+    if (now < ctx->reset_time || 
+        now >= ctx->reset_time + ctx->interval) {
+        ctx->reset_time = now;
+        ctx->left = ctx->limit;
+    }
+
+    if (ctx->left <= 0) {
+        return 0;
+    }
+
+    ctx->left--;
+    return 1;
+}

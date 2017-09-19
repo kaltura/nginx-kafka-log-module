@@ -42,6 +42,8 @@
                  "kafka:",                                  \
                  NGX_KAFKA_LOG_KAFKA_OUT_LEN) ==  0 )
 
+#define ngx_rate_limit(interval, limit) { interval, limit, 0, 0 }
+
 typedef enum {
     NGX_KAFKA_LOG_SINK_FILE = 0,
     NGX_KAFKA_LOG_SINK_KAFKA = 1
@@ -57,10 +59,21 @@ typedef struct {
 #endif
 } ngx_kafka_log_output_location_t;
 
+typedef struct {
+    // fixed
+    int interval;
+    int limit;
+
+    time_t reset_time;
+    int left;
+} ngx_rate_limit_ctx_t;
+
 ngx_int_t ngx_kafka_log_write_sink_file(
     ngx_log_t *log,
     ngx_open_file_t* file,
     ngx_str_t* txt);
+
+ngx_flag_t ngx_kafka_log_rate_limit(ngx_rate_limit_ctx_t* ctx);
 
 #endif // __NGX_KAFKA_LOG_OUTPUT_H__
 

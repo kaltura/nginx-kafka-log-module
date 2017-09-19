@@ -166,10 +166,13 @@ ngx_module_t ngx_http_kafka_log_module = {
 };
 
 #if (NGX_HAVE_LIBRDKAFKA)
+
 typedef struct {
     ngx_str_node_t node;
     rd_kafka_topic_t *rkt;
 } ngx_http_kafka_log_topic_t;
+
+static ngx_rate_limit_ctx_t error_rate_limit = ngx_rate_limit(1, 4);
 
 static rd_kafka_topic_t *
 ngx_http_kafka_log_get_topic(ngx_http_kafka_log_main_conf_t* conf, ngx_str_t* topic_name)
@@ -333,14 +336,16 @@ ngx_http_kafka_log_log_handler(ngx_http_request_t *r) {
                             msg_id.len,
                             NULL)) == -1) {
 
-                const char *errstr = rd_kafka_err2str(rd_kafka_last_error());
+                if (ngx_kafka_log_rate_limit(&error_rate_limit)) {
+                    const char *errstr = rd_kafka_err2str(rd_kafka_last_error());
 
-                ngx_log_error(NGX_LOG_ERR, r->pool->log, 0,
+                    ngx_log_error(NGX_LOG_ERR, r->pool->log, 0,
                         "failed to produce to topic %s "
-                        "partition %i: %s\n",
+                        "partition %i: %s",
                         rd_kafka_topic_name(rkt),
                         mcf->kafka.partition,
                         errstr);
+                }
             } else {
                 ngx_log_debug3(NGX_LOG_DEBUG_HTTP, r->pool->log, 0,
                     "http_kafka_log: kafka msg:[%V] ERR:[%d] QUEUE:[%d]",
