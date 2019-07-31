@@ -5,7 +5,7 @@ language: c
 compiler:
     - clang
     - gcc
-dist: xenial
+dist: bionic 
 env:
   - NGX_KAFKA_LOG_MODULE=--add-module=$TRAVIS_BUILD_DIR
   - NGX_KAFKA_LOG_MODULE=--add-dynamic-module=$TRAVIS_BUILD_DIR
