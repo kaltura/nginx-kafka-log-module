@@ -1,0 +1,19 @@
+before_install:
+    - sudo apt-get update -qq
+    - sudo apt-get install -y  wget unzip librdkafka-dev 
+language: c
+compiler:
+    - clang
+    - gcc
+dist: bionic 
+env:
+  - NGX_KAFKA_LOG_MODULE=--add-module=$TRAVIS_BUILD_DIR
+  - NGX_KAFKA_LOG_MODULE=--add-dynamic-module=$TRAVIS_BUILD_DIR
+script: ./travis_build.sh $NGX_KAFKA_LOG_MODULE
+notifications:
+  email:
+    recipients:
+      - eran.kornblau@kaltura.com
+      - jess.portnoy@kaltura.com
+    on_success: change
+    on_failure: always
