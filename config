@@ -1,4 +1,5 @@
 ngx_addon_name=ngx_kafka_log_module
+ngx_module_libs=
 
 # rdkafka
 #
@@ -12,7 +13,7 @@ ngx_feature_test="rd_kafka_new(RD_KAFKA_PRODUCER, NULL, NULL, 0);"
 . auto/feature
 
 if [ $ngx_found = yes ]; then
-    CORE_LIBS="$CORE_LIBS $ngx_feature_libs"
+    ngx_module_libs="$ngx_module_libs $ngx_feature_libs"
 fi
 
 # sources
@@ -39,4 +40,5 @@ else
     HTTP_MODULES="$HTTP_MODULES ngx_http_kafka_log_module"
     NGX_ADDON_DEPS="$NGX_ADDON_DEPS $KAFKA_LOG_DEPS"
     NGX_ADDON_SRCS="$NGX_ADDON_SRCS $KAFKA_LOG_SRCS"
+    CORE_LIBS="$CORE_LIBS $ngx_module_libs"
 fi
