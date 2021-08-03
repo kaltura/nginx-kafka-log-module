@@ -24,8 +24,8 @@ In this case, the `load_module` directive should be used in nginx.conf to load t
 
 Enables Kafka logging on the specified location. `topic`, `body` and `message_id` can contain nginx variables.
 
-### kafka_log_rdkafka_prop
-* **syntax**: `kafka_log_rdkafka_prop configuration.property value`
+### kafka_log_rdkafka_property
+* **syntax**: `kafka_log_rdkafka_property configuration.property value`
 * **default**: `n/a`
 * **context**: `main`
 
