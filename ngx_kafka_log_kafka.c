@@ -33,7 +33,7 @@
 
 static ngx_rate_limit_ctx_t error_rate_limit = ngx_rate_limit(1, 4);
 
-static char *
+char *
 ngx_kafka_log_str_dup(ngx_pool_t *pool, ngx_str_t *src)
 {
     char *dst;
@@ -219,6 +219,33 @@ ngx_kafka_log_init_kafka(
         return NGX_ERROR;
     }
 
+    if (ngx_kafka_log_kafka_conf_property_set(pool, kafka,
+          "compression.codec", "snappy") != NGX_OK) {
+        return NGX_ERROR;
+    }
+    if (ngx_kafka_log_kafka_conf_property_set(pool, kafka,
+        "client.id", "nginx") != NGX_OK) {
+        return NGX_ERROR;
+    }
+    if (ngx_kafka_log_kafka_conf_property_set(pool, kafka,
+        "message.send.max.retries", "0") != NGX_OK) {
+        return NGX_ERROR;
+    }
+    if (ngx_kafka_log_kafka_conf_property_set(pool, kafka,
+        "queue.buffering.max.messages", "100000") != NGX_OK) {
+        return NGX_ERROR;
+    }
+    if (ngx_kafka_log_kafka_conf_property_set(pool, kafka,
+        "retry.backoff.ms", "10") != NGX_OK) {
+        return NGX_ERROR;
+    }
+    if (ngx_kafka_log_kafka_conf_property_set(pool, kafka,
+        "log_level", "6") != NGX_OK) {
+        return NGX_ERROR;
+    }
+
+    kafka->partition = RD_KAFKA_PARTITION_UA;
+
     return NGX_OK;
 }
 
@@ -226,21 +253,10 @@ ngx_int_t
 ngx_kafka_log_kafka_conf_property_set(
     ngx_pool_t *pool,
     ngx_kafka_log_main_kafka_conf_t *conf,
-    ngx_keyval_t *prop)
+    const char *key, const char *value)
 {
     char                 errstr[NGX_KAFKA_LOG_KAFKA_ERROR_MSG_LEN];
-    char                *key, *value;
     rd_kafka_conf_res_t  ret;
-
-    key = ngx_kafka_log_str_dup(pool, &prop->key);
-    if (!key) {
-        return NGX_ERROR;
-    }
-
-    value = ngx_kafka_log_str_dup(pool, &prop->value);
-    if (!value) {
-        return NGX_ERROR;
-    }
 
     ret = rd_kafka_conf_set(conf->rkc, key, value, errstr, sizeof(errstr));
     if (ret != RD_KAFKA_CONF_OK) {
@@ -271,8 +287,6 @@ ngx_kafka_log_configure_kafka(ngx_pool_t *pool,
         return NGX_ERROR;
     }
 
-    rd_kafka_set_log_level(conf->rk,
-        conf->log_level);
 
     return NGX_OK;
 }

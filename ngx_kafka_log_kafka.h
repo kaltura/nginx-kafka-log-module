@@ -42,7 +42,6 @@ typedef struct {
 typedef struct {
     rd_kafka_t       *rk;                  /* kafka connection handler */
     rd_kafka_conf_t  *rkc;                 /* kafka configuration */
-    ngx_uint_t       log_level;            /* kafka client log level */
     ngx_int_t        partition;            /* kafka partition */
     ngx_flag_t       enable;               /* global enable/disable */
     ngx_rbtree_t     topics_rbtree;
@@ -50,6 +49,8 @@ typedef struct {
 } ngx_kafka_log_main_kafka_conf_t;
 
 // functions
+char *ngx_kafka_log_str_dup(ngx_pool_t *pool, ngx_str_t *src);
+
 rd_kafka_topic_conf_t *ngx_kafka_log_kafka_topic_conf_new(
     ngx_pool_t* pool);
 
@@ -70,7 +71,7 @@ ngx_int_t ngx_kafka_log_init_kafka(
 ngx_int_t ngx_kafka_log_kafka_conf_property_set(
     ngx_pool_t *pool,
     ngx_kafka_log_main_kafka_conf_t *conf,
-    ngx_keyval_t *prop);
+    const char *key, const char *value);
 
 ngx_int_t ngx_kafka_log_configure_kafka(
     ngx_pool_t *pool,
