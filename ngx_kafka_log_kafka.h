@@ -42,14 +42,7 @@ typedef struct {
 typedef struct {
     rd_kafka_t       *rk;                  /* kafka connection handler */
     rd_kafka_conf_t  *rkc;                 /* kafka configuration */
-    ngx_str_t        debug;                /* kafka list of debug contexts */
-    ngx_str_t        brokers;              /* kafka list of brokers */
-    ngx_str_t        client_id;            /* kafka client id */
-    ngx_str_t        compression;          /* kafka communication compression */
     ngx_uint_t       log_level;            /* kafka client log level */
-    ngx_uint_t       max_retries;          /* kafka client max retries */
-    ngx_uint_t       buffer_max_messages;  /* max. num. mesg. at send buffer */
-    ngx_msec_t       backoff_ms;           /* ms to wait for ... */
     ngx_int_t        partition;            /* kafka partition */
     ngx_rbtree_t     topics_rbtree;
     ngx_rbtree_node_t topics_sentinel;
@@ -72,6 +65,11 @@ void ngx_kafka_log_kafka_topic_disable_ack(
 ngx_int_t ngx_kafka_log_init_kafka(
     ngx_pool_t *pool,
     ngx_kafka_log_main_kafka_conf_t *kafka);
+
+ngx_int_t ngx_kafka_log_kafka_conf_property_set(
+    ngx_pool_t *pool,
+    ngx_kafka_log_main_kafka_conf_t *conf,
+    ngx_keyval_t *prop);
 
 ngx_int_t ngx_kafka_log_configure_kafka(
     ngx_pool_t *pool,
