@@ -66,6 +66,14 @@ static ngx_command_t ngx_http_kafka_log_commands[] = {
     },
 #if (NGX_HAVE_LIBRDKAFKA)
     {
+        ngx_string("kafka_log_enable"),
+        NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
+        ngx_conf_set_flag_slot,
+        NGX_HTTP_MAIN_CONF_OFFSET,
+        offsetof(ngx_http_kafka_log_main_conf_t, kafka.enable),
+        NULL
+    },
+    {
         ngx_string("kafka_log_kafka_partition"),
         NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
         ngx_conf_set_num_slot,
@@ -209,6 +217,11 @@ ngx_http_kafka_log_log_handler(ngx_http_request_t *r) {
 
 #if (NGX_HAVE_LIBRDKAFKA)
     mcf = ngx_http_get_module_main_conf(r, ngx_http_kafka_log_module);
+
+    /* Bypass unless explicitly enabled */
+    if (mcf->kafka.enable != 1) {
+        return NGX_OK;
+    }
 #endif
 
     arr = lc->locations->elts;
@@ -372,6 +385,8 @@ ngx_http_kafka_log_create_main_conf(ngx_conf_t *cf) {
         ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                 "http_kafka_log: error initialize kafka conf");
     }
+
+    conf->kafka.enable = NGX_CONF_UNSET;
 #endif
 
     return conf;
@@ -381,9 +396,15 @@ static ngx_int_t
 ngx_http_kafka_log_init_worker(ngx_cycle_t *cycle)
 {
 #if (NGX_HAVE_LIBRDKAFKA)
-    ngx_http_kafka_log_main_conf_t *conf =
-        ngx_http_cycle_get_module_main_conf(cycle, ngx_http_kafka_log_module);;
-    ngx_int_t rc;
+    ngx_http_kafka_log_main_conf_t  *conf;
+    ngx_int_t                        rc;
+
+    conf = ngx_http_cycle_get_module_main_conf(cycle, ngx_http_kafka_log_module);
+
+    /* Bypass if not explicitly enabled */
+    if (conf->kafka.enable != 1) {
+        return NGX_OK;
+    }
 
     rc = ngx_kafka_log_configure_kafka(cycle->pool, &conf->kafka);
     if (rc != NGX_OK) {

@@ -44,6 +44,7 @@ typedef struct {
     rd_kafka_conf_t  *rkc;                 /* kafka configuration */
     ngx_uint_t       log_level;            /* kafka client log level */
     ngx_int_t        partition;            /* kafka partition */
+    ngx_flag_t       enable;               /* global enable/disable */
     ngx_rbtree_t     topics_rbtree;
     ngx_rbtree_node_t topics_sentinel;
 } ngx_kafka_log_main_kafka_conf_t;
