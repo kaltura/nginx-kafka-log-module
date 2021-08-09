@@ -212,6 +212,17 @@ ngx_kafka_log_init_kafka(
     ngx_pool_t *pool,
     ngx_kafka_log_main_kafka_conf_t *kafka)
 {
+    size_t i;
+    const struct { char *key, *value; } defaults[] = {
+        { "compression.codec", "snappy" },
+        { "client.id", "nginx" },
+        { "message.send.max.retries", "0" },
+        { "queue.buffering.max.messages", "100000" },
+        { "retry.backoff.ms", "10" },
+        { "log_level", "6" },
+        { NULL, NULL }
+    };
+
     kafka->rk = NULL;
 
     kafka->rkc = ngx_kafka_log_kafka_conf_new(pool);
@@ -219,29 +230,11 @@ ngx_kafka_log_init_kafka(
         return NGX_ERROR;
     }
 
-    if (ngx_kafka_log_kafka_conf_property_set(pool, kafka,
-          "compression.codec", "snappy") != NGX_OK) {
-        return NGX_ERROR;
-    }
-    if (ngx_kafka_log_kafka_conf_property_set(pool, kafka,
-        "client.id", "nginx") != NGX_OK) {
-        return NGX_ERROR;
-    }
-    if (ngx_kafka_log_kafka_conf_property_set(pool, kafka,
-        "message.send.max.retries", "0") != NGX_OK) {
-        return NGX_ERROR;
-    }
-    if (ngx_kafka_log_kafka_conf_property_set(pool, kafka,
-        "queue.buffering.max.messages", "100000") != NGX_OK) {
-        return NGX_ERROR;
-    }
-    if (ngx_kafka_log_kafka_conf_property_set(pool, kafka,
-        "retry.backoff.ms", "10") != NGX_OK) {
-        return NGX_ERROR;
-    }
-    if (ngx_kafka_log_kafka_conf_property_set(pool, kafka,
-        "log_level", "6") != NGX_OK) {
-        return NGX_ERROR;
+    for (i = 0; defaults[i].key != NULL; i++) {
+        if (ngx_kafka_log_kafka_conf_property_set(pool, kafka,
+            defaults[i].key, defaults[i].value) != NGX_OK) {
+            return NGX_ERROR;
+        }
     }
 
     kafka->partition = RD_KAFKA_PARTITION_UA;
