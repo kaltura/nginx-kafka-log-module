@@ -50,6 +50,10 @@ static char *ngx_http_kafka_log_loc_output(ngx_conf_t *cf, ngx_command_t *cmd, v
 static void *ngx_http_kafka_log_create_main_conf(ngx_conf_t *cf);
 static ngx_int_t ngx_http_kafka_log_init_worker(ngx_cycle_t *cycle);
 static void *ngx_http_kafka_log_create_loc_conf(ngx_conf_t *cf);
+static char *ngx_http_kafka_log_set_property(ngx_conf_t *cf,
+  ngx_command_t *cmd, void *conf);
+static char *ngx_http_kafka_log_set_rdkafka_property(ngx_conf_t *cf,
+  ngx_command_t *cmd, void *conf);
 static ngx_int_t ngx_http_kafka_log_post_config(ngx_conf_t *cf);
 
 // globals
@@ -64,36 +68,44 @@ static ngx_command_t ngx_http_kafka_log_commands[] = {
     },
 #if (NGX_HAVE_LIBRDKAFKA)
     {
+        ngx_string("kafka_log_enable"),
+        NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
+        ngx_conf_set_flag_slot,
+        NGX_HTTP_MAIN_CONF_OFFSET,
+        offsetof(ngx_http_kafka_log_main_conf_t, kafka.enable),
+        NULL
+    },
+    {
         ngx_string("kafka_log_kafka_client_id"),
         NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
-        ngx_conf_set_str_slot,
+        ngx_http_kafka_log_set_property,
         NGX_HTTP_MAIN_CONF_OFFSET,
-        offsetof(ngx_http_kafka_log_main_conf_t, kafka.client_id),
-        NULL
+        0,
+        "client.id"
     },
     {
         ngx_string("kafka_log_kafka_debug"),
         NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
-        ngx_conf_set_str_slot,
+        ngx_http_kafka_log_set_property,
         NGX_HTTP_MAIN_CONF_OFFSET,
-        offsetof(ngx_http_kafka_log_main_conf_t, kafka.debug),
-        NULL
+        0,
+        "debug"
     },
     {
         ngx_string("kafka_log_kafka_brokers"),
         NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
-        ngx_conf_set_str_slot,
+        ngx_http_kafka_log_set_property,
         NGX_HTTP_MAIN_CONF_OFFSET,
-        offsetof(ngx_http_kafka_log_main_conf_t, kafka.brokers),
-        NULL
+        0,
+        "bootstrap.servers"
     },
     {
         ngx_string("kafka_log_kafka_compression"),
         NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
-        ngx_conf_set_str_slot,
+        ngx_http_kafka_log_set_property,
         NGX_HTTP_MAIN_CONF_OFFSET,
-        offsetof(ngx_http_kafka_log_main_conf_t, kafka.compression),
-        NULL
+        0,
+        "compression.codec"
     },
     {
         ngx_string("kafka_log_kafka_partition"),
@@ -106,33 +118,41 @@ static ngx_command_t ngx_http_kafka_log_commands[] = {
     {
         ngx_string("kafka_log_kafka_log_level"),
         NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
-        ngx_conf_set_num_slot,
+        ngx_http_kafka_log_set_property,
         NGX_HTTP_MAIN_CONF_OFFSET,
-        offsetof(ngx_http_kafka_log_main_conf_t, kafka.log_level),
-        NULL
+        0,
+        "log_level"
     },
     {
         ngx_string("kafka_log_kafka_max_retries"),
         NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
-        ngx_conf_set_num_slot,
+        ngx_http_kafka_log_set_property,
         NGX_HTTP_MAIN_CONF_OFFSET,
-        offsetof(ngx_http_kafka_log_main_conf_t, kafka.max_retries),
-        NULL
+        0,
+        "message.send.max.retries"
     },
     {
         ngx_string("kafka_log_kafka_buffer_max_messages"),
         NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
-        ngx_conf_set_num_slot,
+        ngx_http_kafka_log_set_property,
         NGX_HTTP_MAIN_CONF_OFFSET,
-        offsetof(ngx_http_kafka_log_main_conf_t, kafka.buffer_max_messages),
-        NULL
+        0,
+        "queue.buffering.max.messages"
     },
     {
         ngx_string("kafka_log_kafka_backoff_ms"),
         NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
-        ngx_conf_set_msec_slot,
+        ngx_http_kafka_log_set_property,
         NGX_HTTP_MAIN_CONF_OFFSET,
-        offsetof(ngx_http_kafka_log_main_conf_t, kafka.backoff_ms),
+        0,
+        "retry.backoff.ms"
+    },
+    {
+        ngx_string("kafka_log_rdkafka_property"),
+        NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE2,
+        ngx_http_kafka_log_set_rdkafka_property,
+        NGX_HTTP_MAIN_CONF_OFFSET,
+        0,
         NULL
     },
 #endif
@@ -255,6 +275,11 @@ ngx_http_kafka_log_log_handler(ngx_http_request_t *r) {
 
 #if (NGX_HAVE_LIBRDKAFKA)
     mcf = ngx_http_get_module_main_conf(r, ngx_http_kafka_log_module);
+
+    /* Bypass unless explicitly enabled */
+    if (mcf->kafka.enable != 1) {
+        return NGX_OK;
+    }
 #endif
 
     arr = lc->locations->elts;
@@ -378,6 +403,59 @@ ngx_http_kafka_log_post_config(ngx_conf_t *cf) {
     return NGX_OK;
 }
 
+static char *
+ngx_http_kafka_log_set_property(ngx_conf_t *cf, ngx_command_t *cmd,
+    void *conf)
+{
+    ngx_http_kafka_log_main_conf_t  *kmcf = conf;
+    ngx_str_t                       *value = cf->args->elts;
+    char                            *prop_key = (char*)cmd->post;
+    char                            *prop_value;
+
+    prop_value = ngx_kafka_log_str_dup(cf->pool, &value[1]);
+    if (!prop_value) {
+        return NGX_CONF_ERROR;
+    }
+
+    if (ngx_kafka_log_kafka_conf_property_set(cf->pool, &kmcf->kafka,
+                                              prop_key, prop_value) != NGX_OK) {
+        ngx_conf_log_error(NGX_LOG_ERR, cf, 0,
+                "http_kafka_log: failed to set kafka configuration property");
+        return NGX_CONF_ERROR;
+    }
+
+    return NGX_CONF_OK;
+}
+
+static char *
+ngx_http_kafka_log_set_rdkafka_property(ngx_conf_t *cf, ngx_command_t *cmd,
+    void *conf)
+{
+    ngx_http_kafka_log_main_conf_t  *kmcf = conf;
+    ngx_str_t                       *value = cf->args->elts;
+    char                            *prop_key, *prop_value;
+
+    prop_key = ngx_kafka_log_str_dup(cf->pool, &value[1]);
+    if (!prop_key) {
+        return NGX_CONF_ERROR;
+    }
+
+    prop_value = ngx_kafka_log_str_dup(cf->pool, &value[2]);
+    if (!prop_value) {
+        return NGX_CONF_ERROR;
+    }
+
+
+    if (ngx_kafka_log_kafka_conf_property_set(cf->pool, &kmcf->kafka,
+                                              prop_key, prop_value) != NGX_OK) {
+        ngx_conf_log_error(NGX_LOG_ERR, cf, 0,
+                "http_kafka_log: failed to set kafka configuration property");
+        return NGX_CONF_ERROR;
+    }
+
+    return NGX_CONF_OK;
+}
+
 static void *
 ngx_http_kafka_log_create_main_conf(ngx_conf_t *cf) {
 
@@ -395,6 +473,8 @@ ngx_http_kafka_log_create_main_conf(ngx_conf_t *cf) {
         ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                 "http_kafka_log: error initialize kafka conf");
     }
+
+    conf->kafka.enable = NGX_CONF_UNSET;
 #endif
 
     return conf;
@@ -404,9 +484,15 @@ static ngx_int_t
 ngx_http_kafka_log_init_worker(ngx_cycle_t *cycle)
 {
 #if (NGX_HAVE_LIBRDKAFKA)
-    ngx_http_kafka_log_main_conf_t *conf =
-        ngx_http_cycle_get_module_main_conf(cycle, ngx_http_kafka_log_module);;
-    ngx_int_t rc;
+    ngx_http_kafka_log_main_conf_t  *conf;
+    ngx_int_t                        rc;
+
+    conf = ngx_http_cycle_get_module_main_conf(cycle, ngx_http_kafka_log_module);
+
+    /* Bypass if not explicitly enabled */
+    if (conf->kafka.enable != 1) {
+        return NGX_OK;
+    }
 
     rc = ngx_kafka_log_configure_kafka(cycle->pool, &conf->kafka);
     if (rc != NGX_OK) {

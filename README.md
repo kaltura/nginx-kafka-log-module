@@ -24,6 +24,13 @@ In this case, the `load_module` directive should be used in nginx.conf to load t
 
 Enables Kafka logging on the specified location. `topic`, `body` and `message_id` can contain nginx variables.
 
+### kafka_log_rdkafka_property
+* **syntax**: `kafka_log_rdkafka_property configuration.property value`
+* **default**: `n/a`
+* **context**: `main`
+
+Sets arbitrary rdkafka configuration property.
+
 ### kafka_log_kafka_client_id
 * **syntax**: `kafka_log_kafka_client_id client_id`
 * **default**: `nginx`
@@ -91,6 +98,7 @@ The backoff time in milliseconds before retrying a message send.
 ## Sample configuration
 ```
 http {
+        kafka_log_enable on;
 	kafka_log_kafka_brokers 192.168.0.1:9092,192.168.0.2:9092;
 	
 	server {
