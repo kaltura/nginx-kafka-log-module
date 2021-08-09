@@ -81,7 +81,7 @@ static ngx_command_t ngx_http_kafka_log_commands[] = {
         ngx_http_kafka_log_set_property,
         NGX_HTTP_MAIN_CONF_OFFSET,
         0,
-        NULL
+        "client.id"
     },
     {
         ngx_string("kafka_log_kafka_debug"),
@@ -89,7 +89,7 @@ static ngx_command_t ngx_http_kafka_log_commands[] = {
         ngx_http_kafka_log_set_property,
         NGX_HTTP_MAIN_CONF_OFFSET,
         0,
-        NULL
+        "debug"
     },
     {
         ngx_string("kafka_log_kafka_brokers"),
@@ -97,7 +97,7 @@ static ngx_command_t ngx_http_kafka_log_commands[] = {
         ngx_http_kafka_log_set_property,
         NGX_HTTP_MAIN_CONF_OFFSET,
         0,
-        NULL
+        "bootstrap.servers"
     },
     {
         ngx_string("kafka_log_kafka_compression"),
@@ -105,7 +105,7 @@ static ngx_command_t ngx_http_kafka_log_commands[] = {
         ngx_http_kafka_log_set_property,
         NGX_HTTP_MAIN_CONF_OFFSET,
         0,
-        NULL
+        "compression.codec"
     },
     {
         ngx_string("kafka_log_kafka_partition"),
@@ -121,7 +121,7 @@ static ngx_command_t ngx_http_kafka_log_commands[] = {
         ngx_http_kafka_log_set_property,
         NGX_HTTP_MAIN_CONF_OFFSET,
         0,
-        NULL
+        "log_level"
     },
     {
         ngx_string("kafka_log_kafka_max_retries"),
@@ -129,7 +129,7 @@ static ngx_command_t ngx_http_kafka_log_commands[] = {
         ngx_http_kafka_log_set_property,
         NGX_HTTP_MAIN_CONF_OFFSET,
         0,
-        NULL
+        "message.send.max.retries"
     },
     {
         ngx_string("kafka_log_kafka_buffer_max_messages"),
@@ -137,7 +137,7 @@ static ngx_command_t ngx_http_kafka_log_commands[] = {
         ngx_http_kafka_log_set_property,
         NGX_HTTP_MAIN_CONF_OFFSET,
         0,
-        NULL
+        "queue.buffering.max.messages"
     },
     {
         ngx_string("kafka_log_kafka_backoff_ms"),
@@ -145,7 +145,7 @@ static ngx_command_t ngx_http_kafka_log_commands[] = {
         ngx_http_kafka_log_set_property,
         NGX_HTTP_MAIN_CONF_OFFSET,
         0,
-        NULL
+        "retry.backoff.ms"
     },
     {
         ngx_string("kafka_log_rdkafka_property"),
@@ -409,28 +409,8 @@ ngx_http_kafka_log_set_property(ngx_conf_t *cf, ngx_command_t *cmd,
 {
     ngx_http_kafka_log_main_conf_t  *kmcf = conf;
     ngx_str_t                       *value = cf->args->elts;
-    const char                      *name = (char*)cmd->name.data;
-    char                            *prop_key, *prop_value;
-
-    if (ngx_strcmp(name, "kafka_log_kafka_client_id") == 0) {
-        prop_key = "client.id";
-    } else if (ngx_strcmp(name, "kafka_log_kafka_debug") == 0) {
-        prop_key = "debug";
-    } else if (ngx_strcmp(name, "kafka_log_kafka_brokers") == 0) {
-        prop_key = "bootstrap.servers";
-    } else if (ngx_strcmp(name, "kafka_log_kafka_compression") == 0) {
-        prop_key = "compression.codec";
-    } else if (ngx_strcmp(name, "kafka_log_kafka_max_retries") == 0) {
-        prop_key = "message.send.max.retries";
-    } else if (ngx_strcmp(name, "kafka_log_kafka_buffer_max_messages") == 0) {
-        prop_key = "queue.buffering.max.messages";
-    } else if (ngx_strcmp(name, "kafka_log_kafka_backoff_ms") == 0) {
-        prop_key = "retry.backoff.ms";
-    } else if (ngx_strcmp(name, "kafka_log_kafka_log_level") == 0) {
-        prop_key = "log_level";
-    } else {
-        return NGX_CONF_ERROR;
-    }
+    char                            *prop_key = (char*)cmd->post;
+    char                            *prop_value;
 
     prop_value = ngx_kafka_log_str_dup(cf->pool, &value[1]);
     if (!prop_value) {
